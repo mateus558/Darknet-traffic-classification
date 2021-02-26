@@ -26,7 +26,7 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../Metodos_cientificos/Trabalho_2" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
   </component>
   <component name="RunManager">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python">
@@ -61,6 +61,7 @@
       <option name="presentableId" value="Default" />
       <updated>1614200420451</updated>
       <workItem from="1614200421640" duration="6991000" />
+      <workItem from="1614272946197" duration="22000" />
     </task>
     <servers />
   </component>
