@@ -1,5 +1,6 @@
 dataset/Darknet.CSV
-dataset/darknet_processado.csv
+dataset/*.csv
 dataset/TorCSV.zip
 modelosparapublicaodeartigos.zip
 ip_info_gathering
+imgs
