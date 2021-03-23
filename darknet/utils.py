@@ -16,7 +16,7 @@ def select_features_rfecv(model, X, y, min_feats=1,step=2, random_state=None):
     rfe.fit(X, y)
     return rfe
 
-def final_evaluation_rfe(model, X, y, labels, rfe):
+def final_evaluation_rfe(model, X, y, labels, rfe, random_state=42):
     X_selected = rfe.transform(X)
     X_train, X_test, y_train, y_test = train_test_split(X_selected, y, test_size=0.33, random_state=random_state)
     kfold_report = kfold_validation(model, X_train, y_train, n_splits=10)
