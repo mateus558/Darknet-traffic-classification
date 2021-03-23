@@ -11,3 +11,5 @@ Darknet_deprecated.ipynb
 *.dot
 darknet/__pycache__
 .idea
+Darknet_deprecated.ipynb
+Darknet Chart.ipynb
