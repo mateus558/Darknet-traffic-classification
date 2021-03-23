@@ -1,45 +1,13 @@
 import numpy as np
+import math
 import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
 from tqdm import tqdm
 
 from sklearn.metrics import confusion_matrix
-from sklearn.metrics import plot_confusion_matrix
 from sklearn.metrics import classification_report
 from sklearn.model_selection import StratifiedKFold
-<<<<<<< HEAD:darknet/classification.py
-=======
-from sklearn.feature_selection import RFECV
-
-def select_features_rfecv(model, X, y, min_feats=1,step=2, random_state=None):
-    rfe = RFECV(model, min_features_to_select=min_feats, step=step, cv=StratifiedKFold(10, shuffle=True, random_state=random_state), scoring='accuracy', n_jobs=4, verbose=3)
-    rfe.fit(X, y)
-    return rfe
-
-def final_evaluation_rfe(model, X, y, labels, rfe, random_state=42):
-    X_selected = rfe.transform(X)
-    X_train, X_test, y_train, y_test = train_test_split(X_selected, y, test_size=0.33, random_state=random_state)
-    kfold_report = kfold_validation(model, X_train, y_train, n_splits=10)
-    show_kfold_report(kfold_report, np.unique(y_train))
-    show_confusion_matrix(model, X_test, y_test, labels)
-
-
-def summarize_feats(rfe, model, columns, to_remove=[]):
-    columns = [column for column in columns if column not in to_remove]
-    columns = [columns[i] for i in range(len(columns)) if (i < len(rfe.support_))
-               and rfe.support_[i]]
-    features = zip(columns, model.feature_importances_)
-    feat_import = [(feat, importance) for feat, importance in features]
-    feat_import.sort(key=lambda x: x[1], reverse=True)
-
-    n_spaces = max([len(feat) for feat, _ in feat_import])
-    head = "Feature" + str(" " * (n_spaces - len("Feature")) + "\tImportance")
-    print(head)
-    print("-" * (len(head) + 5))
-    for feature, importance in feat_import:
-        print(f"%s:" % (feature), " " * (n_spaces - len(feature)), "\t%0.4f" % (importance))
-
-    return columns
->>>>>>> e0b53c00dac93d497a23cbad11091daaf6d4097f:darknet/utils.py
 
 def split_train_target(samples, labels_col):
     X = samples.copy()
@@ -102,7 +70,7 @@ def show_kfold_report(report, labels):
         print()
     print("\n\n", "%d-fold Accuracy: %0.2f%%"%(report["n_splits"],report['accuracy']*100))
 
-def show_confusion_matrix(model, X, y, labels):
+def show_confusion_matrix(model, X, y, labels, vmax=None, rotation=(0,0), fname=None, display_labels=None, figsize=(8,8)):
     y_pred = model.predict(X)
     conf = confusion_matrix(y, y_pred)
     n_spaces = max([len(label) for label in labels])
@@ -110,24 +78,96 @@ def show_confusion_matrix(model, X, y, labels):
     print("\nConfusion matrix:")
     print(conf)
     print()
+    accs = {}
     for i in range(conf.shape[0]):
-        print(labels[i],":"," "*(n_spaces- len(labels[i])) ," %0.2f%%"%(conf[i,i]/np.sum(conf[:,i])*100))
+        accs[labels[i]] = conf[i, i] / np.sum(conf[:, i]) * 100
+        print(labels[i],":"," "*(n_spaces- len(labels[i])) ," %0.2f%%"%(accs[labels[i]]))
 
-
-def evaluate_model(model, X_train, y_train, X_test, y_test, labels, n_splits=10, figsize=(10, 10), rotation=(35, 25),
-                   fname="conf_mat", display_labels=None):
-    kfold_report = kfold_validation(model, X_train, y_train, n_splits=n_splits)
-    show_kfold_report(kfold_report, labels)
-    show_confusion_matrix(model, X_test, y_test, labels)
-
-    fig, ax = plt.subplots(figsize=figsize)
-    plot_confusion_matrix(model, X_test, y_test, cmap=plt.cm.Blues, ax=ax, colorbar=True,
-                          display_labels=display_labels)
-    plt.yticks(rotation=rotation[0], va='top')
+    if display_labels == None:
+        df_conf = pd.DataFrame(conf, index=labels, columns=labels)
+    else:
+        df_conf = pd.DataFrame(conf, index=display_labels, columns=display_labels)
+    plt.figure(figsize=figsize)
+    ax = sns.heatmap(df_conf, cbar=True, annot=True, cmap='Blues', fmt='g', vmax=vmax)
+    for _, spine in ax.spines.items():
+        spine.set_visible(True)
+    plt.yticks(rotation=rotation[0])
     plt.xticks(rotation=rotation[1])
-    plt.ylabel("")
-    plt.xlabel("")
+    plt.ylabel("Real")
+    plt.xlabel("Predição")
     plt.tight_layout()
     plt.savefig(fname)
     plt.show()
-    return kfold_report
+    return accs
+
+def evaluate_model(model, X_train, y_train, X_test, y_test, labels, n_splits=10, figsize=(10, 10), rotation=(35, 25),
+                   fname="conf_mat", display_labels=None, vmax=None):
+    kfold_report = kfold_validation(model, X_train, y_train, n_splits=n_splits)
+    show_kfold_report(kfold_report, labels)
+    accs = show_confusion_matrix(model, X_test, y_test, labels, figsize=figsize, display_labels=display_labels,
+                          vmax=vmax, rotation=rotation, fname=fname)
+    return kfold_report, accs
+
+def metrics_polar_plot(report, labels, metrics, display, show_legend=True, figsize=None, fname=None, bbox_to_anchor=None):
+    mat = np.zeros((len(labels), len(metrics)))
+    df_metrics = pd.DataFrame(mat, index=labels,columns=metrics)
+    for label in labels:
+        for metric in metrics:
+            df_metrics.loc[label, metric] = 1-report[label][metric.lower()]
+
+    angles = [(n / float(len(labels)) * 2 * math.pi) for n in range(1,len(labels)+1)]
+    angles += angles[:1]
+
+    i = 0
+    max_max = 0
+    min_min = 1
+    fig = plt.figure(figsize=figsize)
+    for metric in df_metrics.columns:
+        if min(df_metrics[metric]) < min_min:
+            min_min = min(df_metrics[metric])
+        if max(df_metrics[metric]) > max_max:
+            max_max = max(df_metrics[metric])
+        plt.polar(angles, df_metrics[metric].tolist()+df_metrics[metric].tolist()[:1], label=display[i])
+        i+=1
+
+    plt.xticks(angles[:-1], labels)
+    plt.yticks(np.round(np.linspace(min_min, max_max, 5),2))
+    if show_legend:
+        plt.legend(loc='lower right', bbox_to_anchor=bbox_to_anchor)
+    plt.tight_layout()
+    if fname is not None:
+        plt.savefig(fname)
+    plt.show()
+
+def accuracy_polar_plot(accs, labels, models, display=None, show_legend=True, figsize=None, fname=None,bbox_to_anchor=None):
+    mat = np.zeros((len(labels), len(models)))
+    df_metrics = pd.DataFrame(mat, index=labels,columns=models)
+    for label in labels:
+        for model in models:
+            df_metrics.loc[label, model] = 100-accs[model][label]
+    angles = [(n / float(len(labels)) * 2 * math.pi) for n in range(1,len(labels)+1)]
+    angles += angles[:1]
+
+    i = 0
+    max_max = 0
+    min_min = 1
+    fig = plt.figure(figsize=figsize)
+    for model in df_metrics.columns:
+        if min(df_metrics[model]) < min_min:
+            min_min = min(df_metrics[model])
+        if max(df_metrics[model]) > max_max:
+            max_max = max(df_metrics[model])
+        if display is not None:
+            plt.polar(angles, df_metrics[model].tolist()+df_metrics[model].tolist()[:1], label=display[i])
+        else:
+            plt.polar(angles, df_metrics[model].tolist()+df_metrics[model].tolist()[:1], label=models[i])
+        i+=1
+
+    plt.xticks(angles[:-1], labels)
+    plt.yticks(np.round(np.linspace(min_min, max_max, 5),2))
+    if show_legend:
+        plt.legend(loc='lower right', bbox_to_anchor=bbox_to_anchor)
+    plt.tight_layout()
+    if fname is not None:
+        plt.savefig(fname)
+    plt.show()

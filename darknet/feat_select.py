@@ -1,6 +1,5 @@
 from sklearn.feature_selection import RFECV
 from sklearn.model_selection import train_test_split
-from sklearn.model_selection import StratifiedKFold
 from .classification import *
 
 def select_features_rfecv(model, X, y, min_feats=1,step=2, random_state=None):
