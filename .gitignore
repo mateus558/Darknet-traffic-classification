@@ -1,6 +1,13 @@
+feedback.pdf
+ip_feat_extraction.png
 dataset/Darknet.CSV
 dataset/*.csv
 dataset/TorCSV.zip
 modelosparapublicaodeartigos.zip
 ip_info_gathering
 imgs
+Darknet_deprecated.ipynb
+*.pdf
+*.dot
+darknet/__pycache__
+.idea
