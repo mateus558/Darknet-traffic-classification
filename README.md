@@ -18,7 +18,8 @@ All the notebooks have the preffix Darknet, so it'll be ommited on the descripti
 
 All the notebooks can be executed locally in a conda environment by [anaconda](www.anaconda.com) installation and the execution of the following commands inside the notebooks folder.
 
-<code>conda env create -f darknet.yml
+```
+conda env create -f darknet.yml
 conda activate darknet
 jupyter notebook
-</code>
+```
