@@ -7,6 +7,7 @@ from tqdm import tqdm
 
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
+from sklearn.metrics import accuracy_score
 from sklearn.model_selection import StratifiedKFold
 
 def split_train_target(samples, labels_col):
@@ -21,14 +22,21 @@ def split_train_target(samples, labels_col):
 def kfold_validation(model, X, y, labels=None, n_splits=10, random_state=42):
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=random_state)
     classifier_reports = []
-    for train_index, test_index in tqdm(skf.split(X, y), total=n_splits):
+    accs = []
+    step = 0
+    pbar = tqdm(skf.split(X, y), total=n_splits)
+    for train_index, test_index in pbar:
         x_train_fold, x_test_fold = X[train_index], X[test_index]
         y_train_fold, y_test_fold = y[train_index], y[test_index]
         model = model.fit(x_train_fold, y_train_fold)
         y_pred_fold = model.predict(x_test_fold)
         class_report = classification_report(y_test_fold, y_pred_fold, target_names=labels,
                                              output_dict=True)
+        acc = accuracy_score(y_test_fold, y_pred_fold)
+        accs.append(acc)
+        pbar.set_postfix({'Test acc. #{}'.format(step): acc})
         classifier_reports.append(class_report)
+        step += 1
 
     final_report = {}
     for report in classifier_reports:
@@ -51,7 +59,10 @@ def kfold_validation(model, X, y, labels=None, n_splits=10, random_state=42):
                 final_report[label][metric] /= n_splits
         else:
             final_report[label] /= n_splits
+
     final_report["n_splits"] = n_splits
+    final_report["accuracies"] = accs
+    
     return final_report
 
 def show_kfold_report(report, labels):
