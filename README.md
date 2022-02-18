@@ -16,7 +16,7 @@ All the notebooks have the preffix Darknet, so it'll be ommited on the descripti
 
 ## Running the notebooks
 
-All the notebooks can be executed locally in a conda environment by [anaconda](www.anaconda.com) installation and the execution of the following commands inside the notebooks folder.
+All the notebooks can be executed locally in a conda environment by [anaconda](https://www.anaconda.com/products/individual) installation and the execution of the following commands inside the notebooks folder.
 
 ```
 conda env create -f darknet.yml
